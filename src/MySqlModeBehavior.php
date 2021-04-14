@@ -15,7 +15,9 @@ use yii\db\Connection;
 use yii\i18n\PhpMessageSource;
 
 /**
- * @property string $sqlModeString
+ * Class MySqlModeBehavior
+ *
+ * @property string[] $sqlMode
  */
 class MySqlModeBehavior extends Behavior
 {
@@ -27,7 +29,17 @@ class MySqlModeBehavior extends Behavior
     const MODE_ERROR_FOR_DIVISION_BY_ZERO = 'ERROR_FOR_DIVISION_BY_ZERO';
     const MODE_NO_ENGINE_SUBSTITUTION     = 'NO_ENGINE_SUBSTITUTION';
 
-    public $sqlMode = [self::MODE_TRADITIONAL];
+    const POSSIBLE_MODES = [
+        self::MODE_TRADITIONAL                => self::MODE_TRADITIONAL,
+        self::MODE_STRICT_ALL_TABLES          => self::MODE_STRICT_ALL_TABLES,
+        self::MODE_STRICT_TRANS_TABLES        => self::MODE_STRICT_TRANS_TABLES,
+        self::MODE_NO_ZERO_IN_DATE            => self::MODE_NO_ZERO_IN_DATE,
+        self::MODE_NO_ZERO_DATE               => self::MODE_NO_ZERO_DATE,
+        self::MODE_ERROR_FOR_DIVISION_BY_ZERO => self::MODE_ERROR_FOR_DIVISION_BY_ZERO,
+        self::MODE_NO_ENGINE_SUBSTITUTION     => self::MODE_NO_ENGINE_SUBSTITUTION,
+    ];
+
+    public $_sqlMode = [self::MODE_TRADITIONAL];
 
     public function init()
     {
@@ -50,12 +62,7 @@ class MySqlModeBehavior extends Behavior
      */
     public function attach($owner)
     {
-
-        $this->ensureOwner($owner, function () {
-            return new \BadMethodCallException(Yii::t('kadanin/yii2/behaviors/my-sql-mode', 'Behavior {className} can be attached only to instance ', [
-
-            ]));
-        });
+        $this->ensureOwner($owner, \BadMethodCallException::class);
 
         parent::attach($owner);
     }
@@ -77,8 +84,8 @@ class MySqlModeBehavior extends Behavior
     }
 
     /**
-     * @param mixed    $owner
-     * @param callable $exceptionClass
+     * @param mixed  $owner
+     * @param string $exceptionClass
      *
      * @return Connection
      */
@@ -105,17 +112,31 @@ class MySqlModeBehavior extends Behavior
      */
     public function handleAfterOpen()
     {
-        $this->ensureOwner($this->owner, InvalidConfigException::class)->pdo->exec("SET SQL_MODE= '{$this->sqlModeString}'");
+        $this->ensureOwner($this->owner, InvalidConfigException::class)->pdo->exec("SET SQL_MODE='{$this->sqlModeString()}'");
+    }
+
+    public function sqlModeString()
+    {
+        return \implode(',', $this->_sqlMode);
     }
 
     /**
-     * @see sqlModeString
-     * @see [[sqlModeString]]
-     *
-     * @return string
+     * @return string[]
      */
-    public function getSqlModeString()
+    public function getSqlMode()
     {
-        return implode(',', $this->sqlMode);
+        return $this->_sqlMode;
+    }
+
+    /**
+     * @param string[] $sqlMode
+     */
+    public function setSqlMode(array $sqlMode)
+    {
+        $sqlMode = \array_combine($sqlMode, $sqlMode);
+
+        $sqlMode = \array_intersect_key($sqlMode, self::POSSIBLE_MODES);
+
+        $this->_sqlMode = $sqlMode;
     }
 }

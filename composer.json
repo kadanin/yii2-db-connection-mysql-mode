@@ -1,10 +1,14 @@
 {
     "name":              "kadanin/yii2-db-connection-mysql-mode",
+    "description":       "",
     "license":           "MIT",
     "minimum-stability": "stable",
     "require":           {
         "php":          ">=5.6.0",
         "yiisoft/yii2": "~2.0.0"
+    },
+    "require-dev":       {
+        "roave/security-advisories": "dev-latest"
     },
     "repositories":      [
         {
